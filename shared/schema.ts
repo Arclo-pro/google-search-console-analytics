@@ -1,18 +1,25 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+export const googleConnections = pgTable("google_connections", {
+  websiteId: text("website_id").primaryKey(),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token").notNull(),
+  expiryDate: integer("expiry_date").notNull(), // Unix timestamp in ms
+  scopes: text("scopes").array().notNull(),
+  scProperty: text("sc_property"),
+  ga4PropertyId: text("ga4_property_id"),
+  googleUserEmail: text("google_user_email").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertGoogleConnectionSchema = createInsertSchema(googleConnections).omit({
+  createdAt: true,
+  updatedAt: true,
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export type InsertGoogleConnection = z.infer<typeof insertGoogleConnectionSchema>;
+export type GoogleConnection = typeof googleConnections.$inferSelect;
