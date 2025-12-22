@@ -40,3 +40,8 @@ waitForPort = 5000
 
 [agent]
 mockupState = "FULLSTACK"
+
+[userenv]
+
+[userenv.shared]
+GSC_REDIRECT_URI = "https://worker-google-services--providers2.replit.app/auth/callback"
