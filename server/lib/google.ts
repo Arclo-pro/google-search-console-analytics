@@ -2,9 +2,10 @@ import { google } from "googleapis";
 import type { GoogleConnection } from "@shared/schema";
 import { storage } from "../storage";
 
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
-const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || "";
+// Support both GSC_ and GOOGLE_ prefixes for flexibility
+const GOOGLE_CLIENT_ID = process.env.GSC_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || "";
+const GOOGLE_CLIENT_SECRET = process.env.GSC_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || "";
+const GOOGLE_REDIRECT_URI = process.env.GSC_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI || "";
 
 export const REQUIRED_SCOPES = [
   "https://www.googleapis.com/auth/webmasters.readonly",
