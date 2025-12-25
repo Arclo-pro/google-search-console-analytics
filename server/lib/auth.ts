@@ -23,32 +23,44 @@ export function signJWT(payload: JWTPayload): string {
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  // Support both Authorization: Bearer and x-api-key header
-  const authHeader = req.headers.authorization;
+  // Support both x-api-key (preferred) and Authorization: Bearer (fallback)
   const apiKey = req.headers["x-api-key"] as string | undefined;
+  const authHeader = req.headers.authorization;
   
-  // Check x-api-key first (simple key comparison)
+  const unauthorizedResponse = {
+    ok: false,
+    error: { code: "unauthorized", message: "Invalid API key" }
+  };
+  
+  // Check x-api-key first (preferred - simple key comparison)
   if (apiKey) {
     if (apiKey === JWT_SECRET) {
       req.user = { authenticated: true, method: "api-key" };
       return next();
     }
-    return res.status(401).json({ error: "unauthorized" });
+    return res.status(401).json(unauthorizedResponse);
   }
   
-  // Fall back to Bearer token (JWT verification)
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "unauthorized" });
+  // Fall back to Bearer token (can be raw key or JWT)
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.substring(7);
+    
+    // First try as raw API key
+    if (token === JWT_SECRET) {
+      req.user = { authenticated: true, method: "bearer-key" };
+      return next();
+    }
+    
+    // Then try as JWT
+    try {
+      req.user = verifyJWT(token);
+      return next();
+    } catch (error) {
+      return res.status(401).json(unauthorizedResponse);
+    }
   }
-
-  const token = authHeader.substring(7);
   
-  try {
-    req.user = verifyJWT(token);
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: "unauthorized" });
-  }
+  return res.status(401).json(unauthorizedResponse);
 }
 
 declare global {

@@ -7,19 +7,31 @@ import { google } from "googleapis";
 import { z } from "zod";
 
 const AI_DOCTOR_BASE_URL = process.env.AI_DOCTOR_BASE_URL;
+const SERVICE_VERSION = "1.0.0";
+const SCHEMA_VERSION = "2025-12-25";
+const startTime = Date.now();
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   
-  // Health check endpoints (both for compatibility)
+  // Health check endpoints (both for compatibility) - NO AUTH REQUIRED
+  const healthResponse = () => ({
+    ok: true,
+    service: "google_services_worker",
+    version: SERVICE_VERSION,
+    schema_version: SCHEMA_VERSION,
+    timestamp: new Date().toISOString(),
+    uptime_s: Math.floor((Date.now() - startTime) / 1000)
+  });
+  
   app.get("/health", (_req, res) => {
-    res.json({ ok: true, service: "google_services_worker" });
+    res.json(healthResponse());
   });
   
   app.get("/api/health", (_req, res) => {
-    res.json({ ok: true, service: "google_services_worker" });
+    res.json(healthResponse());
   });
 
   // OAuth flow - Start
@@ -563,32 +575,54 @@ export async function registerRoutes(
     }
   });
 
-  // Smoke test endpoint - confirms service is working and shows expected output structure
+  // Smoke test endpoint - returns all 9 outputs (Gold Standard Blueprint)
   app.get("/api/smoke-test", requireAuth, (_req, res) => {
     res.json({
       ok: true,
       service: "google_services_worker",
-      outputs: {
-        gsc_impressions: "number",
-        gsc_clicks: "number",
-        gsc_ctr: "number",
-        gsc_position: "number",
-        gsc_queries: "array",
-        gsc_pages: "array",
-        ga4_sessions: "number",
-        ga4_users: "number",
-        ga4_conversions: "number"
-      },
-      endpoints: {
-        metrics: "GET /api/websites/:websiteId/metrics",
-        status: "GET /api/websites/:websiteId/status"
+      version: SERVICE_VERSION,
+      schema_version: SCHEMA_VERSION,
+      data: {
+        gsc_impressions: null,
+        gsc_clicks: null,
+        gsc_ctr: null,
+        gsc_position: null,
+        gsc_queries: [],
+        gsc_pages: [],
+        ga4_sessions: null,
+        ga4_users: null,
+        ga4_conversions: null
       }
     });
   });
 
-  // Catch-all for unknown /api/* routes - return JSON 404
+  // Capabilities endpoint (optional but recommended)
+  app.get("/api/capabilities", (_req, res) => {
+    res.json({
+      ok: true,
+      service: "google_services_worker",
+      schema_version: SCHEMA_VERSION,
+      outputs: [
+        "gsc_impressions",
+        "gsc_clicks",
+        "gsc_ctr",
+        "gsc_position",
+        "gsc_queries",
+        "gsc_pages",
+        "ga4_sessions",
+        "ga4_users",
+        "ga4_conversions"
+      ],
+      auth: { type: "api_key", header: "x-api-key" }
+    });
+  });
+
+  // Catch-all for unknown /api/* routes - return JSON 404 (Gold Standard format)
   app.all("/api/*", (_req, res) => {
-    res.status(404).json({ error: "not_found", message: "API endpoint not found" });
+    res.status(404).json({
+      ok: false,
+      error: { code: "not_found", message: "API endpoint not found" }
+    });
   });
 
   return httpServer;
