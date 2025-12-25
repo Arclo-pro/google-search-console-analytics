@@ -1,0 +1,138 @@
+Update the **Google Services Worker** so it passes Hermes smoke tests **without changing Bitwarden or Hermes**.
+
+Bitwarden is fixed:
+
+* base_url = [https://worker-google-services--providers2.replit.app/api](https://worker-google-services--providers2.replit.app/api)
+
+Hermes will always call:
+
+* GET /api/health
+* GET /api/smoke-test
+
+Your task is to implement these routes exactly.
+
+---
+
+## 1) ADD THIS ROUTE (required)
+
+### GET /api/health
+
+If this route does not already exist, add it.
+
+Response (always JSON, no auth):
+
+```json
+{
+  "ok": true,
+  "service": "google_services_worker",
+  "version": "1.0.0"
+}
+```
+
+* Must return HTTP 200
+* Must never return HTML
+* Must not require auth
+
+---
+
+## 2) ADD THIS ROUTE (this is what’s missing)
+
+### GET /api/smoke-test
+
+This route **does not exist today** — that is why Hermes is failing.
+
+Implement it.
+
+Auth:
+
+* Require API key
+* Accept either:
+
+  * `x-api-key`
+  * or `Authorization: Bearer`
+* Validate against `TRAFFIC_DOCTOR_API_KEY`
+
+Response (HTTP 200, JSON):
+
+```json
+{
+  "ok": true,
+  "service": "google_services_worker",
+  "data": {
+    "gsc_impressions": 0,
+    "gsc_clicks": 0,
+    "gsc_ctr": 0,
+    "gsc_position": 0,
+    "gsc_queries": [],
+    "gsc_pages": [],
+    "ga4_sessions": 0,
+    "ga4_users": 0,
+    "ga4_conversions": 0
+  }
+}
+```
+
+Important:
+
+* **All 9 keys must exist**
+* Values can be real OR stubbed
+* If required env vars are missing, return:
+
+```json
+{
+  "ok": false,
+  "error": { "code": "misconfigured", "message": "Missing required config" }
+}
+```
+
+Do **not** return 404.
+
+---
+
+## 3) API-ONLY GUARANTEE (already mostly done)
+
+Ensure:
+
+* `/api/*` never serves HTML
+* Unknown `/api/*` returns JSON 404:
+
+```json
+{
+  "ok": false,
+  "error": { "code": "not_found", "message": "API endpoint not found" }
+}
+```
+
+---
+
+## 4) ROUTER CHECK (critical)
+
+Confirm your server mounts routes like this:
+
+```ts
+app.use("/api", apiRouter);
+
+apiRouter.get("/health", ...);
+apiRouter.get("/smoke-test", authMiddleware, ...);
+```
+
+If `/api/smoke-test` is not explicitly registered, Hermes will **always** fail.
+
+---
+
+## 5) VERIFY AFTER DEPLOY
+
+Run these manually:
+
+```bash
+curl https://worker-google-services--providers2.replit.app/api/health
+```
+
+```bash
+curl -H "x-api-key: <TRAFFIC_DOCTOR_API_KEY>" \
+     https://worker-google-services--providers2.replit.app/api/smoke-test
+```
+
+Both must return JSON 200.
+
+Once they do, Hermes smoke test will pass immediately.
