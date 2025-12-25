@@ -19,7 +19,7 @@ export async function registerRoutes(
   
   // Health check endpoints (both for compatibility) - NO AUTH REQUIRED
   const healthResponse = () => {
-    const expectedKey = process.env.TRAFFIC_DOCTOR_API_KEY || process.env.WORKER_API_KEY || '';
+    const expectedKey = process.env.HERMES_API_KEY || process.env.TRAFFIC_DOCTOR_API_KEY || process.env.WORKER_API_KEY || '';
     const expectedKeyFingerprint = expectedKey ? computeKeyFingerprint(expectedKey) : null;
     
     return {
