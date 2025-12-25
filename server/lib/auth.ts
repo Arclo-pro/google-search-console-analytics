@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
 
-// Support multiple naming conventions
-const JWT_SECRET = process.env.TRAFFIC_DOCTOR_API_KEY || process.env.JWT_SHARED_SECRET || "";
+// Support multiple naming conventions (Hermes is the current name, Traffic Doctor was legacy)
+const JWT_SECRET = process.env.HERMES_API_KEY || process.env.TRAFFIC_DOCTOR_API_KEY || process.env.JWT_SHARED_SECRET || "";
 
 export interface JWTPayload {
   [key: string]: any;
@@ -23,7 +23,7 @@ export function signJWT(payload: JWTPayload): string {
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const expectedKey = process.env.TRAFFIC_DOCTOR_API_KEY || process.env.WORKER_API_KEY;
+  const expectedKey = process.env.HERMES_API_KEY || process.env.TRAFFIC_DOCTOR_API_KEY || process.env.WORKER_API_KEY;
   
   // Check if API key is configured on worker
   if (!expectedKey) {
