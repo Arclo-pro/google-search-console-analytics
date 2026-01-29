@@ -150,3 +150,15 @@ Required environment variables:
 5. AI Doctor makes authenticated API calls with JWT token to fetch data
 6. Service automatically refreshes Google tokens when needed (5-minute buffer before expiry)
 7. Service retries failed API calls with exponential backoff for rate limits and server errors
+
+## Runtime Configuration (from .replit)
+
+- **Dev command**: `npm run dev`
+- **Build command**: `npm run build`
+- **Production command**: `node ./dist/index.cjs`
+- **Deployment target**: autoscale
+- **Port**: 5000
+
+### Environment Variables
+- `PORT`: `5000`
+- `GSC_REDIRECT_URI`: `https://worker-google-services--providers2.replit.app/auth/callback`
